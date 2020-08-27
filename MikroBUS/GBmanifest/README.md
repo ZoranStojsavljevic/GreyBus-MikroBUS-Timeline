@@ -136,7 +136,7 @@ Compiled with the command:
 	} __packed;
 
 	struct greybus_descriptor_header {
-				address 0x0004
+				address 0x0004 [08 00 01 00]
 		__le16	size;	==>> 08 00
 		__u8	type;	==>> 01
 		__u8	pad;	==>> 00
@@ -165,7 +165,7 @@ Compiled with the command:
 	} __packed;
 
 	struct greybus_descriptor_cport {
-					address 0x00?? 
+					address 0x00?? ========>>>>>>>> Where this is defined in the HEX!!!
 		__le16	id;		==>>
 		__u8	bundle;
 		__u8	protocol_id;
