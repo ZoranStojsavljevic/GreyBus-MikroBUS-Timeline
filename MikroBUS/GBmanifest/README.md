@@ -117,12 +117,17 @@ Compiled with the command:
 
 	struct greybus_manifest_header {
 						address 0x0000 [80 00 00 01]
-		__le16	size;			==>> 80 00
+		__le16	size;			==>> 80 00 Little Endian Value = 128
 		__u8	version_major;		==>> 00
 		__u8	version_minor;		==>> 01
 	} __packed;
 
 	struct greybus_descriptor { ========>>>>>>>> The structure does NOT follow the order of the presentation!!!
+				According to the Greybus manifest definitions the order of the descriptors(how they appear
+				in the source) is not relevant and the same manifest source content even if the descriptors
+				are reordered will generate the binary which on parsing will give the same results, the binary
+				will always have the descriptors in order of how they appear in the source, also there can be multiple
+				instances of string, bundle, cport, property, device descriptors within a single add-on board manifest.
 		struct greybus_descriptor_header		header;
 		union {
 			struct greybus_descriptor_string	string;
@@ -136,23 +141,24 @@ Compiled with the command:
 	} __packed;
 
 	struct greybus_descriptor_header {
-				address 0x0004 [08 00 01 00]
-		__le16	size;	==>> 08 00
-		__u8	type;	==>> 01
-		__u8	pad;	==>> 00
+				address 0x0004 [80 00 01 00]
+		__le16	size;	==>> 80 00  
+		__u8	type;	==>> 01	    All descriptors have a type field which is mapped to  type in enum greybus_descriptor_type
+		__u8	pad;	==>> 00     All descriptors are padded to have size in multiples of 4 bytes
 	} __packed;
 
 	struct greybus_descriptor_string {
 					address 0x0010 [10 01 4D 69 6B 72 6F 45 6C 65 6B 74 72 6F 6E 69 6B 61 00 00]
 		__u8	length;		==>> 10
-		__u8	id;		==>> 01
-		__u8	string[0];	==>> 4D 69 6B 72 6F 45 6C 65 6B 74 72 6F 6E 69 6B 61 00 00
+		__u8	id;		==>> 01 (String ID 1)
+		__u8	string[0];	==>> 4D 69 6B 72 6F 45 6C 65 6B 74 72 6F 6E 69 6B 61 00 00 (ASCII : MikroElektronika , all strings will be padded with zeros 
+													at the end to have size multiple of 4 bytes.)
 	} __packed;
 
 	struct greybus_descriptor_interface {
 						address 0x0008 [01 02 00 00]
-		__u8	vendor_stringid;	==>> 01
-		__u8	product_stringid;	==>> 02
+		__u8	vendor_stringid;	==>> 01 (string with id will be the vendor string) 
+		__u8	product_stringid;	==>> 02 (string with id 2 will be the product string)
 		__u8	features;		==>> 00
 		__u8	pad;			==>> 00
 	} __packed;
@@ -177,7 +183,9 @@ Compiled with the command:
 	} __packed;
 
 	struct greybus_descriptor_property {
-					address 0x00?? ========>>>>>>>> Where this is defined in the HEX!!!
+					address 0x00?? ========>>>>>>>> Where this is defined in the HEX!!! (This is used only when the device driver
+					requires custom properties to be passed in this example this descriptor is not used EEPROM-2-CLICK.mnfs is a
+					case where this is used.
 		__u8 length;		==>>
 		__u8 id;		==>>
 		__u8 propname_stringid;	==>>
