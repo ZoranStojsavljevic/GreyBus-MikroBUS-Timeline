@@ -116,7 +116,7 @@ Compiled with the command:
 	} __packed;
 
 	struct greybus_manifest_header {
-					address 0x0000: [80 00 00 01]
+					address 0x0000: header	[80 00 00 01]
 		__le16	size;		==>> 80 00
 		__u8	version_major;	==>> 00
 		__u8	version_minor;	==>> 01
@@ -135,19 +135,26 @@ Compiled with the command:
 		};
 	} __packed;
 
-	struct greybus_descriptor_header {
-				address 0x0004: [08 00 01 00]
-		__le16	size;	==>> 08 00
-		__u8	type;	==>> 01
-		__u8	pad;	==>> 00
-	} __packed;
+	/*
+	 * The device descriptor is used to describe a device on the
+	 * mikrobus port and has necessary fields from `struct i2c_board_info`
+	 * and `struct spi_board_info` to describe a device on these buses
+	 * in a mikrobus port, even though SPI/I2C device info structs are used
+	 * this descriptor has enough information to describe other kinds of
+	 * devices relevant to mikrobus as well.(serdev/platform devices).
+	 * The device descriptor is a fixed-length descriptor and there can be
+	 * multiple instances of device descriptors in an add-on board manifest
+	 * in cases where the add-on board presents more than one device to the
+	 * host.
+	 */
 
 	struct greybus_descriptor_interface {
-						address 0x0008: [01 02 00 00]
-		__u8	vendor_stringid;	==>> 01
-		__u8	product_stringid;	==>> 02
-		__u8	features;		==>> 00
-		__u8	pad;			==>> 00
+					address 0x0004: header	[08 00 01 00]
+					address 0x0008:	data	[01 02 00 00]
+		__u8 vendor_stringid;	==>> 01
+		__u8 product_stringid;	==>> 02
+		__u8 features;		==>> 00
+		__u8 pad;		==>> 00
 	} __packed;
 
 	struct greybus_descriptor_string (1) {
@@ -165,6 +172,18 @@ Compiled with the command:
 		__u8	id;		==>> 02
 		__u8	string[0];	==>> 45 54 48 20 43 6C 69 63 6B 00
 	} __packed;
+
+	/*
+	 * The mikrobus descriptor is used to pass information about
+	 * the specific pinmux settings and the default GPIO states on
+	 * the mikrobus port to be set up for the add-on board to work
+	 * correctly, this descriptor has 12 u8 fields(corresponding to
+	 * the 12 pins on the mikrobus port) which includes information
+	 * about the prior setup required on the mikroBUS port for the
+	 * device(s) on the add-on board to work correctly. The mikrobus
+	 * descriptor is a fixed-length descriptor and there will be only a
+	 * single instance of mikrobus descriptor per add-on board manifest.
+	 */
 
 	struct greybus_descriptor_mikrobus {
 					address 0x0034: header	[10 00 05 00]
@@ -198,12 +217,12 @@ Compiled with the command:
 
 	struct greybus_descriptor_device {
 					address 0x005C: header  [14 00 07 00]
-					address 0x0060: data	[01 03 0B 00 24 F4 00 00 01 02 00 00 00 00 00 00]
+					address 0x0060: data	[01 03 0B 00 00 24 F4 00 01 02 00 00 00 00 00 00]
 		__u8 id;		==>> 01
 		__u8 driver_stringid;	==>> 03
-		__u8 protocol;		==>> 00
-		__u8 reg;		==>> 0B
-		__le32 max_speed_hz;	==>> 00 24 F4 00
+		__u8 protocol;		==>> 0B		/* GREYBUS_PROTOCOL_SPI */
+		__u8 reg;		==>> 00
+		__le32 max_speed_hz;	==>> 00 24 F4 00 /* 16000000 dec. */
 		__u8 irq;		==>> 01
 		__u8 irq_type;		==>> 02
 		__u8 mode;		==>> 00
@@ -233,9 +252,9 @@ Compiled with the command:
 	0060    01 03 0B 00 00 24 F4 00 01 02 00 00 00 00 00 00 ................
 	0070	10 00 02 00 08 03 65 6E 63 32 38 6A 36 30 00 00 ......enc28j60..
 
-	struct greybus_manifest_header		0x0000 [ data	80 00 00 01 ]
-	struct greybus_descriptor_header	0x0004 [ data	08 00 01 00 ]
-        struct greybus_descriptor_interface	0x0008 [ data	01 02 00 00 ]
+	struct greybus_manifest_header		0x0000 [ header	80 00 00 01 ]
+	struct greybus_descriptor_interface	0x0004 [ header	08 00 01 00 ]
+						0x0008 [ data	01 02 00 00 ]
 	struct greybus_descriptor_string (1)	0x000C [ header	18 00 02 00 ]
 						0x0010 [ data	10 01 4D 69 6B 72 6F 45 6C 65 6B 74 72 6F 6E 69 6B 61 00 00 ]
 	struct greybus_descriptor_string (2)	0x0024 [ header	10 00 02 00 ]
